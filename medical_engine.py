@@ -4,8 +4,7 @@ import requests
 import PyPDF2
 from PIL import Image
 from dotenv import load_dotenv
-import google.generativeai as genai
-
+from google import genai
 load_dotenv()
 
 class UltimateMedicalEngine:
@@ -13,8 +12,8 @@ class UltimateMedicalEngine:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key or api_key == "YOUR_GEMINI_API_KEY_HERE":
             raise ValueError("Error: .env फ़ाइल में GEMINI_API_KEY सेट नहीं है!")
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.client = genai.Client(api_key=api_key)
+
 
     def fetch_live_hospitals(self, city_name="Delhi"):
         try:
@@ -82,7 +81,10 @@ class UltimateMedicalEngine:
         if image:
             contents.append(image)
 
-        response = self.model.generate_content(contents)
+        response = self.client.models.generate_content(
+    model='gemini-3.8-flash',
+    contents=prompt
+)
         return response.text
 
     def dynamic_symptom_interview(self, symptom, history=[]):
@@ -104,7 +106,10 @@ class UltimateMedicalEngine:
             "specialist_required": "Exact Specialist Title (e.g., Neurologist, Cardiologist, ENT)"
         }}
         """
-        response = self.model.generate_content(prompt)
+        response = self.client.models.generate_content(
+    model='gemini-3.8-flash',
+    contents=prompt
+)
         try:
             clean_text = response.text.replace("```json", "").replace("```", "").strip()
             return json.loads(clean_text)
@@ -118,5 +123,8 @@ class UltimateMedicalEngine:
 
     def general_medical_consultant(self, query):
         prompt = f"You are a Master Medical Specialist. Provide evidence-based clinical guidance for: {query}"
-        response = self.model.generate_content(prompt)
+        response = self.client.models.generate_content(
+    model='gemini-3.8-flash',
+    contents=prompt
+)
         return response.text

@@ -3,7 +3,9 @@ import streamlit as st
 import pandas as pd
 from PIL import Image
 from medical_engine import UltimateMedicalEngine
-
+import io
+from gtts import gTTS
+from streamlit_mic_recorder import speech_to_text
 st.set_page_config(
     page_title="MedCopilot AI - Universal Health Platform",
     page_icon="🩺",
@@ -107,9 +109,32 @@ with tab2:
 
 with tab3:
     st.header("Universal Medical & Veterinary Knowledge Base")
-    query = st.text_area("Ask any medical question (Human or Animal Diseases):", height=100)
+    
+    # 🎤 Mic recorder button
+    spoken_text = speech_to_text(
+        language='en', 
+        start_prompt="🎤 Click to Speak", 
+        stop_prompt="⏹️ Stop Recording", 
+        key='tab3_speech'
+    )
+    
+    # Text Input
+    query = st.text_area(
+        "Ask any medical question (Human or Animal Diseases):", 
+        value=spoken_text if spoken_text else "",
+        height=100
+    )
+    
     if st.button("Consult Knowledge Engine"):
-        if query:
+        if query.strip():
             with st.spinner("Searching Evidence-Based Medical Knowledge..."):
                 ans = engine.general_medical_consultant(query)
                 st.markdown(ans)
+                
+                # 🔊 Text-To-Speech (Audio output)
+                tts = gTTS(text=ans, lang="en")
+                fp = io.BytesIO()
+                tts.write_to_fp(fp)
+                st.audio(fp, format="audio/mp3")
+        else:
+            st.warning("Please enter or speak a question first.")
